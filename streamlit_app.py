@@ -1,178 +1,55 @@
+import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import streamlit as st
-from pypdf import PdfReader
 
-st.set_page_config(page_title="AI PDF & Image Analyzer Pro", page_icon="📚")
+# MASTER API KEY - Yahan apni original Gemini API key daal dena
+MASTER_API_KEY = "TU_APNI_GEMINI_API_KEY_YAHAN_DAL_DENA"
 
-st.title("🚀 AI PDF, Image & Study Assistant")
-st.write(
-    "Upload your study notes (PDF, Image, or Text) to get instant AI-powered"
-    " exam questions or summaries!"
+# Configure Gemini API
+genai.configure(api_key=MASTER_API_KEY)
+
+st.set_page_config(page_title="AI Study & Summary Matrix", page_icon="📚", layout="centered")
+
+st.markdown("<h1 style='text-align: center; color: #38bdf8;'>Neural Study Assistant</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #94a3b8;'>Select your role, upload notes or type text, and get instant AI insights.</p>", unsafe_allow_html=True)
+
+# Role Selection
+user_role = st.selectbox(
+    "Select Your Role",
+    ("Student (PCB / NEET Aspirant)", "UPSC / Civil Services Aspirant", "Working Professional")
 )
 
-# Sidebar for API Key & Settings
-st.sidebar.header("⚙️ Configuration")
-api_key = st.sidebar.text_input("Enter Gemini API Key", type="password")
+# File Upload Option
+uploaded_file = st.file_uploader("Upload Study Image or Document (Optional)", type=["png", "jpg", "jpeg", "pdf"])
 
-if api_key:
-  genai.configure(api_key=api_key)
-  model = genai.GenerativeModel("gemini-1.5-flash")
-else:
-  st.sidebar.warning("Please enter your Gemini API key to enable AI.")
+# Text Input
+user_input = st.text_area("Or Paste Topic / Notes Details", placeholder="Enter text or video topic details here...")
 
-# User Role Selection
-role = st.sidebar.selectbox(
-    "Select Your Role:", ["Student", "Working Professional"]
-)
-
-
-# Function to extract text from PDF
-def extract_pdf_text(uploaded_file):
-  reader = PdfReader(uploaded_file)
-  text = ""
-  for page in reader.pages:
-    text += page.extract_text() or ""
-  return text
-
-
-if role == "Student":
-  st.subheader("🎓 Student Exam Prep Mode (Powered by AI)")
-
-  # Option to upload PDF, Image, or paste text
-  upload_option = st.radio(
-      "Choose input method:",
-      ("Upload PDF File", "Upload Image / Screenshot", "Paste Text"),
-  )
-
-  input_data = None
-  input_type = None
-
-  if upload_option == "Upload PDF File":
-    pdf_file = st.file_uploader("Upload your study PDF", type=["pdf"])
-    if pdf_file is not None:
-      with st.spinner("Reading PDF..."):
-        input_data = extract_pdf_text(pdf_file)
-        input_type = "text"
-        st.success(
-            f"✅ PDF Successfully Read! ({len(input_data)} characters found)"
-        )
-
-  elif upload_option == "Upload Image / Screenshot":
-    image_file = st.file_uploader(
-        "Upload image or screenshot of your notes/book",
-        type=["png", "jpg", "jpeg"],
-    )
-    if image_file is not None:
-      input_data = Image.open(image_file)
-      input_type = "image"
-      st.image(
-          input_data,
-          caption="Uploaded Image",
-          use_container_width=True,
-      )
-      st.success("✅ Image Successfully Uploaded!")
-
-  else:
-    input_data = st.text_area(
-        "Paste your textbook chapter or study notes here:"
-    )
-    input_type = "text"
-
-  if st.button("Generate Real AI Exam Questions"):
-    if not api_key:
-      st.error("Please enter your Gemini API key in the sidebar first!")
-    elif not input_data:
-      st.warning(
-          "Please upload a file, image, or paste some text first!"
-      )
+if st.button("Generate AI Matrix & Notes", type="primary"):
+    if not user_input.strip() and not uploaded_file:
+        st.warning("Please enter some text or upload a file first!")
     else:
-      with st.spinner("AI is generating high-yield exam questions..."):
-        try:
-          prompt = (
-              "Act as an expert examiner. Based on the provided study"
-              " material/image, generate important exam questions with"
-              " answers:"
-          )
+        with st.spinner("Processing via Neural AI..."):
+            try:
+                # Select Gemini Model (Flash handles text and images seamlessly)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                prompt = f"You are an advanced AI study assistant. The user is a {user_role}. Based on the provided input/file, generate a crisp summary, structured smart notes, and key takeaways.\n\nAdditional Notes: {user_input}"
+                
+                content_to_send = [prompt]
+                
+                if uploaded_file is not None:
+                    if uploaded_file.type == "application/pdf":
+                        st.info("PDF processing note: Ensure text can be read or use image upload for best results.")
+                        content_to_send.append(user_input)
+                    else:
+                        image = Image.open(uploaded_file)
+                        content_to_send.append(image)
 
-          if input_type == "image":
-            response = model.generate_content([prompt, input_data])
-          else:
-            response = model.generate_content(prompt + "\n\n" + input_data)
-
-          st.success("✅ AI Generated Exam Questions:")
-          st.markdown(response.text)
-        except Exception as e:
-          st.error(f"An error occurred: {e}")
-
-elif role == "Working Professional":
-  st.subheader("💼 Professional Work Summary Mode (Powered by AI)")
-
-  upload_option = st.radio(
-      "Choose input method:",
-      ("Upload PDF File", "Upload Image / Screenshot", "Paste Text"),
-      key="pro_upload",
-  )
-
-  input_data = None
-  input_type = None
-
-  if upload_option == "Upload PDF File":
-    pdf_file = st.file_uploader(
-        "Upload your office report PDF", type=["pdf"], key="pro_pdf"
-    )
-    if pdf_file is not None:
-      with st.spinner("Reading PDF..."):
-        input_data = extract_pdf_text(pdf_file)
-        input_type = "text"
-        st.success(
-            f"✅ PDF Successfully Read! ({len(input_data)} characters found)"
-        )
-
-  elif upload_option == "Upload Image / Screenshot":
-    image_file = st.file_uploader(
-        "Upload image or screenshot of report/document",
-        type=["png", "jpg", "jpeg"],
-        key="pro_img",
-    )
-    if image_file is not None:
-      input_data = Image.open(image_file)
-      input_type = "image"
-      st.image(
-          input_data,
-          caption="Uploaded Image",
-          use_container_width=True,
-      )
-      st.success("✅ Image Successfully Uploaded!")
-
-  else:
-    input_data = st.text_area(
-        "Paste your office report or document text here:", key="pro_text"
-    )
-    input_type = "text"
-
-  if st.button("Generate Real AI Summary"):
-    if not api_key:
-      st.error("Please enter your Gemini API key in the sidebar first!")
-    elif not input_data:
-      st.warning(
-          "Please upload a file, image, or paste some text first!"
-      )
-    else:
-      with st.spinner("AI is analyzing the document..."):
-        try:
-          prompt = (
-              "Act as a professional business analyst. Provide a concise"
-              " executive summary, key takeaways, and insights based on this"
-              " text/image:"
-          )
-
-          if input_type == "image":
-            response = model.generate_content([prompt, input_data])
-          else:
-            response = model.generate_content(prompt + "\n\n" + input_data)
-
-          st.success("✅ AI Executive Summary Generated:")
-          st.markdown(response.text)
-        except Exception as e:
-          st.error(f"An error occurred: {e}")
+                response = model.generate_content(content_to_send)
+                
+                st.markdown("### AI Generated Insights:")
+                st.write(response.text)
+                
+            except Exception as e:
+                st.error(f"Error occurred: {e}")
