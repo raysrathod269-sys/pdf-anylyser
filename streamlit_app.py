@@ -1,4 +1,4 @@
-import streamlit as st
+MASTER_API_KEY = "YOUR_API_KEY"import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 
