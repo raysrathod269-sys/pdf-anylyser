@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 from PIL import Image
 import tempfile
 import os
@@ -9,8 +9,12 @@ st.set_page_config(page_title="AI Study Assistant Hub", page_icon="📚", layout
 st.markdown("<h1 style='text-align: center; color: #38bdf8;'>AI Study Assistant Hub</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #94a3b8;'>Your ultimate AI companion for instant smart notes and summaries!</p>", unsafe_allow_html=True)
 
-# API Key Input Box
-user_api_key = st.text_input("Enter your Gemini API Key", type="password", placeholder="Paste your AI Studio API key here...")
+# Securely fetch API key from Streamlit secrets automatically (No user input needed!)
+try:
+    MASTER_API_KEY = st.secrets["GEMINI_API_KEY"]
+except Exception as e:
+    st.error("API Key not found in Streamlit Secrets! Please add GEMINI_API_KEY in your app settings.")
+    MASTER_API_KEY = None
 
 # User Role Category
 user_role = st.selectbox(
@@ -30,20 +34,16 @@ user_link = st.text_input("Or Paste Link / URL (YouTube, Website, etc.)", placeh
 user_input = st.text_area("Or Paste Topic / Specific Questions", placeholder="Enter specific questions, topics, or extra notes here...")
 
 if st.button("Generate AI Short Notes & Matrix", type="primary"):
-    if not user_api_key.strip():
-        st.warning("Please enter your Gemini API Key in the box above first!")
+    if not MASTER_API_KEY:
+        st.error("Master API Key is missing in app settings.")
     elif not user_input.strip() and not uploaded_file and not user_link.strip():
         st.warning("Please upload a file, paste a link, or enter some text/topic first!")
     else:
         try:
-            clean_key = user_api_key.strip()
-            genai.configure(api_key=clean_key)
+            client = genai.Client(api_key=MASTER_API_KEY)
             
             spinner_text = "Processing via AI Study Assistant Hub..."
             with st.spinner(spinner_text):
-                # Using the standard active model for API keys
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                
                 link_context = f"\nUser Provided Link/URL: {user_link}" if user_link.strip() else ""
                 prompt = f"You are an advanced AI assistant inside the AI Study Assistant Hub. The user category is: '{user_role}'. Based on the provided file, link, or input, generate a crisp summary, structured smart revision notes, and key takeaways tailored specifically for this category.\n\nAdditional Details: {user_input}{link_context}"
                 
@@ -59,7 +59,7 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
                             tmp_file.write(uploaded_file.read())
                             tmp_file_path = tmp_file.name
                         
-                        video_file = genai.upload_file(path=tmp_file_path)
+                        video_file = client.files.upload(file=tmp_file_path)
                         st.info("Video uploaded to AI engine successfully. Analyzing content...")
                         
                         content_to_send.append(video_file)
@@ -71,7 +71,10 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
                         image = Image.open(uploaded_file)
                         content_to_send.append(image)
 
-                response = model.generate_content(content_to_send)
+                response = client.models.generate_content(
+                    model='gemini-1.5-flash',
+                    contents=content_to_send
+                )
                 
                 st.markdown("### AI Generated Insights & Short Notes:")
                 st.write(response.text)
