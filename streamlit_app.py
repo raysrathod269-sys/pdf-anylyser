@@ -9,7 +9,7 @@ st.set_page_config(page_title="AI Study Assistant Hub", page_icon="📚", layout
 st.markdown("<h1 style='text-align: center; color: #38bdf8;'>AI Study Assistant Hub</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #94a3b8;'>Your ultimate AI companion for instant smart notes and summaries!</p>", unsafe_allow_html=True)
 
-# Securely fetch API key from Streamlit secrets (No user input needed!)
+# Securely fetch API key from Streamlit secrets
 try:
     MASTER_API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=MASTER_API_KEY)
@@ -43,7 +43,8 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
         try:
             spinner_text = "Processing via AI Study Assistant Hub..."
             with st.spinner(spinner_text):
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Updated model name compatible with newer API project keys
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 
                 link_context = f"\nUser Provided Link/URL: {user_link}" if user_link.strip() else ""
                 prompt = f"You are an advanced AI assistant inside the AI Study Assistant Hub. The user category is: '{user_role}'. Based on the provided file, link, or input, generate a crisp summary, structured smart revision notes, and key takeaways tailored specifically for this category.\n\nAdditional Details: {user_input}{link_context}"
