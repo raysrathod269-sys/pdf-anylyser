@@ -14,30 +14,33 @@ except Exception as e:
 st.set_page_config(page_title="AI Study & Summary Matrix", page_icon="📚", layout="centered")
 
 st.markdown("<h1 style='text-align: center; color: #38bdf8;'>Neural Study Assistant</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #94a3b8;'>Select your role, upload study notes, images, or any video to get instant AI short notes!</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #94a3b8;'>For School, College, Competitive Exams (Police Bharti, UPSC) & Professionals!</p>", unsafe_allow_html=True)
 
-user_role = st.selectbox(
-    "Select Your Role",
-    ("Student (PCB / NEET Aspirant)", "UPSC / Civil Services Aspirant", "Working Professional")
+# User can now type ANY exam, standard or role they are preparing for!
+user_role = st.text_input(
+    "What are you studying or preparing for?", 
+    placeholder="e.g., Police Bharti, 10th Standard Science, B.Sc final year, UPSC, NEET..."
 )
 
-# File Upload Option - Now supports Images, PDFs AND Videos!
+# File Upload Option - Supports Images, PDFs AND Videos!
 uploaded_file = st.file_uploader(
-    "Upload Image, Document (PDF), or Any Video (MP4/MOV)", 
+    "Upload Study Notes, Image, PDF, or Any Video (Lecture/Notes)", 
     type=["png", "jpg", "jpeg", "pdf", "mp4", "mov", "avi", "webm"]
 )
 
-user_input = st.text_area("Or Paste Topic / Additional Notes Details", placeholder="Enter text or specific questions here...")
+user_input = st.text_area("Or Paste Topic / Specific Questions", placeholder="Enter specific questions, topics, or extra notes here...")
 
 if st.button("Generate AI Short Notes & Matrix", type="primary"):
-    if not user_input.strip() and not uploaded_file:
-        st.warning("Please upload a file (video/image/PDF) or enter some text first!")
+    if not user_role.strip():
+        st.warning("Please enter what you are studying or preparing for in the field above!")
+    elif not user_input.strip() and not uploaded_file:
+        st.warning("Please upload a file (video/image/PDF) or enter some text/topic first!")
     else:
         spinner_text = "Processing file via Neural AI..." if uploaded_file else "Synthesizing notes and summary..."
         with st.spinner(spinner_text):
             try:
                 model = genai.GenerativeModel('gemini-1.5-flash')
-                prompt = f"You are an advanced AI study assistant. The user is a {user_role}. Based on the provided file or input, generate a crisp summary, structured smart notes, and key takeaways.\n\nAdditional Notes: {user_input}"
+                prompt = f"You are an advanced AI study and exam preparation assistant. The user is preparing for / studying: '{user_role}'. Based on the provided file or input, generate a crisp summary, structured smart revision notes, and key exam takeaways tailored specifically for this goal.\n\nAdditional Details: {user_input}"
                 
                 content_to_send = [prompt]
                 
@@ -45,20 +48,16 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
                     file_extension = uploaded_file.name.split('.')[-1].lower()
                     
                     if file_extension in ["mp4", "mov", "avi", "webm"]:
-                        st.info("Uploading and processing video... This might take a few moments depending on video size.")
+                        st.info("Uploading and processing video... This might take a few moments.")
                         
-                        # Save video temporarily to process with Gemini File API
                         with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as tmp_file:
                             tmp_file.write(uploaded_file.read())
                             tmp_file_path = tmp_file.name
                         
-                        # Upload video file to Gemini
                         video_file = genai.upload_file(path=tmp_file_path)
-                        st.info(f"Video uploaded to AI engine successfully. Analyzing content...")
+                        st.info("Video uploaded to AI engine successfully. Analyzing content...")
                         
                         content_to_send.append(video_file)
-                        
-                        # Clean up temp file local reference
                         os.unlink(tmp_file_path)
                         
                     elif file_extension == "pdf":
