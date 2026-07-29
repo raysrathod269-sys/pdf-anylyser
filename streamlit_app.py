@@ -14,31 +14,38 @@ except Exception as e:
 st.set_page_config(page_title="AI Study Assistant Hub", page_icon="📚", layout="centered")
 
 st.markdown("<h1 style='text-align: center; color: #38bdf8;'>AI Study Assistant Hub</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #94a3b8;'>Your ultimate AI companion for instant smart notes and summaries!</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #94a3b8;'>Upload notes, PDFs, videos, or paste any link/topic for instant smart summaries!</p>", unsafe_allow_html=True)
 
-# Only 2 options: Student and Working Professional
+# User Role Category
 user_role = st.selectbox(
     "Select Your Category",
     ("Student", "Working Professional")
 )
 
-# File Upload Option - Supports Images, PDFs AND Videos!
+# File Upload Option - Broadened types
 uploaded_file = st.file_uploader(
-    "Upload Study Notes, Image, PDF, or Any Video (Lecture/Notes)", 
-    type=["png", "jpg", "jpeg", "pdf", "mp4", "mov", "avi", "webm"]
+    "Upload Document (PDF), Image, or Video File", 
+    type=["pdf", "png", "jpg", "jpeg", "mp4", "mov", "avi", "webm", "txt", "docx"]
 )
+
+# Added a dedicated Link/URL input field as requested!
+user_link = st.text_input("Or Paste Link / URL (YouTube, Website, etc.)", placeholder="https://...")
 
 user_input = st.text_area("Or Paste Topic / Specific Questions", placeholder="Enter specific questions, topics, or extra notes here...")
 
 if st.button("Generate AI Short Notes & Matrix", type="primary"):
-    if not user_input.strip() and not uploaded_file:
-        st.warning("Please upload a file (video/image/PDF) or enter some text/topic first!")
+    if not user_input.strip() and not uploaded_file and not user_link.strip():
+        st.warning("Please upload a file, paste a link, or enter some text/topic first!")
     else:
-        spinner_text = "Processing file via AI Study Assistant Hub..." if uploaded_file else "Synthesizing notes and summary..."
+        spinner_text = "Processing via AI Study Assistant Hub..."
         with st.spinner(spinner_text):
             try:
                 model = genai.GenerativeModel('gemini-1.5-flash')
-                prompt = f"You are an advanced AI assistant inside the AI Study Assistant Hub. The user category is: '{user_role}'. Based on the provided file or input, generate a crisp summary, structured smart revision notes, and key takeaways tailored specifically for this category.\n\nAdditional Details: {user_input}"
+                
+                # Combining link info into prompt if provided
+                link_context = f"\nUser Provided Link/URL: {user_link}" if user_link.strip() else ""
+                
+                prompt = f"You are an advanced AI assistant inside the AI Study Assistant Hub. The user category is: '{user_role}'. Based on the provided file, link, or input, generate a crisp summary, structured smart revision notes, and key takeaways tailored specifically for this category.\n\nAdditional Details: {user_input}{link_context}"
                 
                 content_to_send = [prompt]
                 
@@ -58,7 +65,7 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
                         content_to_send.append(video_file)
                         os.unlink(tmp_file_path)
                         
-                    elif file_extension == "pdf":
+                    elif file_extension in ["pdf", "txt", "docx"]:
                         content_to_send.append(user_input)
                     else:
                         image = Image.open(uploaded_file)
