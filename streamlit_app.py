@@ -4,17 +4,13 @@ from PIL import Image
 import tempfile
 import os
 
-# Securely fetch API key from Streamlit secrets
-try:
-    MASTER_API_KEY = st.secrets["GEMINI_API_KEY"]
-    genai.configure(api_key=MASTER_API_KEY)
-except Exception as e:
-    st.error("API Key not found in Streamlit Secrets! Please add GEMINI_API_KEY in your app settings.")
-
 st.set_page_config(page_title="AI Study Assistant Hub", page_icon="📚", layout="centered")
 
 st.markdown("<h1 style='text-align: center; color: #38bdf8;'>AI Study Assistant Hub</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #94a3b8;'>Upload notes, PDFs, videos, or paste any link/topic for instant smart summaries!</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #94a3b8;'>Your ultimate AI companion for instant smart notes and summaries!</p>", unsafe_allow_html=True)
+
+# Direct API Key Input Box inside the app so you never face Secrets error again!
+user_api_key = st.text_input("Enter your Gemini API Key", type="password", placeholder="Paste your AI Studio API key here...")
 
 # User Role Category
 user_role = st.selectbox(
@@ -22,29 +18,32 @@ user_role = st.selectbox(
     ("Student", "Working Professional")
 )
 
-# File Upload Option - Broadened types
+# File Upload Option
 uploaded_file = st.file_uploader(
     "Upload Document (PDF), Image, or Video File", 
     type=["pdf", "png", "jpg", "jpeg", "mp4", "mov", "avi", "webm", "txt", "docx"]
 )
 
-# Added a dedicated Link/URL input field as requested!
+# Link/URL input field
 user_link = st.text_input("Or Paste Link / URL (YouTube, Website, etc.)", placeholder="https://...")
 
 user_input = st.text_area("Or Paste Topic / Specific Questions", placeholder="Enter specific questions, topics, or extra notes here...")
 
 if st.button("Generate AI Short Notes & Matrix", type="primary"):
-    if not user_input.strip() and not uploaded_file and not user_link.strip():
+    if not user_api_key.strip():
+        st.warning("Please enter your Gemini API Key in the box above first!")
+    elif not user_input.strip() and not uploaded_file and not user_link.strip():
         st.warning("Please upload a file, paste a link, or enter some text/topic first!")
     else:
-        spinner_text = "Processing via AI Study Assistant Hub..."
-        with st.spinner(spinner_text):
-            try:
+        try:
+            # Configure Gemini dynamically with the key entered by the user
+            genai.configure(api_key=user_api_key.strip())
+            
+            spinner_text = "Processing via AI Study Assistant Hub..."
+            with st.spinner(spinner_text):
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 
-                # Combining link info into prompt if provided
                 link_context = f"\nUser Provided Link/URL: {user_link}" if user_link.strip() else ""
-                
                 prompt = f"You are an advanced AI assistant inside the AI Study Assistant Hub. The user category is: '{user_role}'. Based on the provided file, link, or input, generate a crisp summary, structured smart revision notes, and key takeaways tailored specifically for this category.\n\nAdditional Details: {user_input}{link_context}"
                 
                 content_to_send = [prompt]
@@ -76,5 +75,5 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
                 st.markdown("### AI Generated Insights & Short Notes:")
                 st.write(response.text)
                 
-            except Exception as e:
-                st.error(f"Error occurred during processing: {e}")
+        except Exception as e:
+            st.error(f"Error occurred during processing: {e}")
