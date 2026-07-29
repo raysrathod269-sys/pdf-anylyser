@@ -9,7 +9,7 @@ st.set_page_config(page_title="AI Study Assistant Hub", page_icon="📚", layout
 st.markdown("<h1 style='text-align: center; color: #38bdf8;'>AI Study Assistant Hub</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #94a3b8;'>Your ultimate AI companion for instant smart notes and summaries!</p>", unsafe_allow_html=True)
 
-# Direct API Key Input Box inside the app so you never face Secrets error again!
+# API Key Input Box
 user_api_key = st.text_input("Enter your Gemini API Key", type="password", placeholder="Paste your AI Studio API key here...")
 
 # User Role Category
@@ -36,11 +36,13 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
         st.warning("Please upload a file, paste a link, or enter some text/topic first!")
     else:
         try:
-            # Configure Gemini dynamically with the key entered by the user
-            genai.configure(api_key=user_api_key.strip())
+            # Clean key from accidental spaces
+            clean_key = user_api_key.strip()
+            genai.configure(api_key=clean_key)
             
             spinner_text = "Processing via AI Study Assistant Hub..."
             with st.spinner(spinner_text):
+                # Using latest recommended model name
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 
                 link_context = f"\nUser Provided Link/URL: {user_link}" if user_link.strip() else ""
@@ -76,4 +78,5 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
                 st.write(response.text)
                 
         except Exception as e:
-            st.error(f"Error occurred during processing: {e}")
+            st.error(f"Error occurred: {e}")
+            st.info("Tip: Double-check your API key from Google AI Studio. Make sure there are no trailing spaces when pasting it.")
