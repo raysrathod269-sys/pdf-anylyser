@@ -36,14 +36,13 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
         st.warning("Please upload a file, paste a link, or enter some text/topic first!")
     else:
         try:
-            # Clean key from accidental spaces
             clean_key = user_api_key.strip()
             genai.configure(api_key=clean_key)
             
             spinner_text = "Processing via AI Study Assistant Hub..."
             with st.spinner(spinner_text):
-                # Using latest recommended model name
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Updated model name to match current API support
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 
                 link_context = f"\nUser Provided Link/URL: {user_link}" if user_link.strip() else ""
                 prompt = f"You are an advanced AI assistant inside the AI Study Assistant Hub. The user category is: '{user_role}'. Based on the provided file, link, or input, generate a crisp summary, structured smart revision notes, and key takeaways tailored specifically for this category.\n\nAdditional Details: {user_input}{link_context}"
@@ -79,4 +78,3 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
                 
         except Exception as e:
             st.error(f"Error occurred: {e}")
-            st.info("Tip: Double-check your API key from Google AI Studio. Make sure there are no trailing spaces when pasting it.")
