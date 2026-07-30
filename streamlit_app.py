@@ -41,10 +41,19 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
         st.warning("Please upload a file, paste a link, or enter some text/topic first!")
     else:
         try:
-            spinner_text = "Processing via AI Study Assistant Hub..."
+            spinner_text = "Finding available AI model & processing..."
             with st.spinner(spinner_text):
-                # Using gemini-1.5-pro which is fully supported for these project keys
-                model = genai.GenerativeModel('gemini-1.5-pro')
+                # Automatically pick a working generative model available for this key
+                available_model_name = None
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods and ('flash' in m.name or 'pro' in m.name):
+                        available_model_name = m.name
+                        break
+                
+                if not available_model_name:
+                    available_model_name = 'gemini-1.5-flash' # fallback
+                
+                model = genai.GenerativeModel(available_model_name)
                 
                 link_context = f"\nUser Provided Link/URL: {user_link}" if user_link.strip() else ""
                 prompt = f"You are an advanced AI assistant inside the AI Study Assistant Hub. The user category is: '{user_role}'. Based on the provided file, link, or input, generate a crisp summary, structured smart revision notes, and key takeaways tailored specifically for this category.\n\nAdditional Details: {user_input}{link_context}"
