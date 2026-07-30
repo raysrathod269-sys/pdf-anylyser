@@ -41,19 +41,10 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
         st.warning("Please upload a file, paste a link, or enter some text/topic first!")
     else:
         try:
-            spinner_text = "Finding available AI model & processing..."
+            spinner_text = "Processing via AI Study Assistant Hub..."
             with st.spinner(spinner_text):
-                # Automatically pick a working generative model available for this key
-                available_model_name = None
-                for m in genai.list_models():
-                    if 'generateContent' in m.supported_generation_methods and ('flash' in m.name or 'pro' in m.name):
-                        available_model_name = m.name
-                        break
-                
-                if not available_model_name:
-                    available_model_name = 'gemini-1.5-flash' # fallback
-                
-                model = genai.GenerativeModel(available_model_name)
+                # Standard stable model initialization
+                model = genai.GenerativeModel('gemini-1.5-flash')
                 
                 link_context = f"\nUser Provided Link/URL: {user_link}" if user_link.strip() else ""
                 prompt = f"You are an advanced AI assistant inside the AI Study Assistant Hub. The user category is: '{user_role}'. Based on the provided file, link, or input, generate a crisp summary, structured smart revision notes, and key takeaways tailored specifically for this category.\n\nAdditional Details: {user_input}{link_context}"
@@ -61,7 +52,7 @@ if st.button("Generate AI Short Notes & Matrix", type="primary"):
                 content_to_send = [prompt]
                 
                 if uploaded_file is not None:
-                    file_extension = uploaded_file.name.split('.')[-1].lower()
+                    file_extension = uploaded_file.name.name.split('.')[-1].lower() if hasattr(uploaded_file.name, 'name') else uploaded_file.name.split('.')[-1].lower()
                     
                     if file_extension in ["mp4", "mov", "avi", "webm"]:
                         st.info("Uploading and processing video... This might take a few moments.")
